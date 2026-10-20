@@ -1,0 +1,176 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function userExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserRole() {
+      return userExists() ? getUserData().role : null;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && (getUserRole() == 'super_admin' || getUserRole() == 'admin');
+    }
+
+    function isStaf() {
+      return isAuthenticated() && (getUserRole() == 'staf' || isSuperAdmin());
+    }
+
+    function isTutor() {
+      return isAuthenticated() && (getUserRole() == 'tutor' || isSuperAdmin());
+    }
+
+    function isUserActive() {
+      return isAuthenticated() && (!userExists() || getUserData().aktif != false);
+    }
+
+    // 1. Koleksi users
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+
+      allow create: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (request.auth.uid == userId &&
+         request.resource.data.role == 'siswa' &&
+         request.resource.data.aktif == true)
+      );
+
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (isOwner(userId) &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.aktif == resource.data.aktif)
+      );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // 2. Koleksi program (Katalog Program Bimbel)
+    match /program/{programId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || isStaf();
+    }
+
+    // 3. Koleksi pendaftaran
+    match /pendaftaran/{pendaftaranId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.siswaId == request.auth.uid ||
+        isStaf()
+      );
+
+      allow create: if isAuthenticated() && isUserActive() && (
+        isSuperAdmin() ||
+        isStaf() ||
+        (request.resource.data.siswaId == request.auth.uid &&
+         request.resource.data.status == 'menunggu')
+      );
+
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        isStaf() ||
+        (resource.data.siswaId == request.auth.uid &&
+         request.resource.data.status == resource.data.status)
+      );
+
+      allow delete: if isSuperAdmin() || isStaf();
+    }
+
+    // 4. Koleksi kelas
+    match /kelas/{kelasId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isStaf();
+    }
+
+    // 5. Koleksi tugas
+    match /tugas/{tugasId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isTutor() || isStaf();
+    }
+
+    // 6. Koleksi pengumpulan
+    match /pengumpulan/{pengumpulanId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.siswaId == request.auth.uid ||
+        isTutor() ||
+        isStaf()
+      );
+
+      allow create: if isAuthenticated() && isUserActive() && (
+        isSuperAdmin() ||
+        isTutor() ||
+        (request.resource.data.siswaId == request.auth.uid &&
+         (!('nilai' in request.resource.data)) &&
+         (!('komentar' in request.resource.data)) &&
+         (!('catatanTutor' in request.resource.data)))
+      );
+
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        isTutor() ||
+        (resource.data.siswaId == request.auth.uid &&
+         request.resource.data.siswaId == resource.data.siswaId &&
+         (!('nilai' in request.resource.data) || request.resource.data.nilai == resource.data.nilai) &&
+         (!('komentar' in request.resource.data) || request.resource.data.komentar == resource.data.komentar) &&
+         (!('catatanTutor' in request.resource.data) || request.resource.data.catatanTutor == resource.data.catatanTutor))
+      );
+
+      allow delete: if isSuperAdmin() || (resource.data.siswaId == request.auth.uid && !('nilai' in resource.data));
+    }
+
+    // 7. Koleksi penilaian
+    match /penilaian/{penilaianId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isTutor();
+    }
+
+    // 8. Koleksi presensi
+    match /presensi/{presensiId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isTutor();
+    }
+
+    // 9. Koleksi notifikasi
+    // Pengguna dapat membaca dan memperbarui status dibaca pada notifikasi miliknya sendiri
+    match /notifikasi/{notifId} {
+      allow read, update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow create: if isAuthenticated();
+    }
+
+    // 10. Koleksi diskusi_tugas (Forum Tanya Jawab Interaktif per Tugas)
+    match /diskusi_tugas/{pesanId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isUserActive();
+      allow update, delete: if isAuthenticated() && (resource.data.pengirimId == request.auth.uid || isSuperAdmin());
+    }
+
+    // 11. Koleksi kuis (Bank Soal CBT & Pilihan Ganda)
+    match /kuis/{kuisId} {
+      allow read: if isAuthenticated();
+      allow write: if isTutor() || isSuperAdmin();
+    }
+
+    // 12. Koleksi hasil_kuis (Hasil Pengerjaan Kuis Siswa)
+    match /hasil_kuis/{hasilId} {
+      allow read: if isAuthenticated() && (resource.data.siswaId == request.auth.uid || isTutor() || isSuperAdmin());
+      allow create: if isAuthenticated() && isUserActive() && request.resource.data.siswaId == request.auth.uid;
+      allow update, delete: if isSuperAdmin();
+    }
+  }
+}
