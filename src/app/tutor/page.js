@@ -273,11 +273,20 @@ export default function DasborTutorPage() {
             </div>
 
             <div className="pt-4 mt-4 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" /> $\ge 75\%$ Tinggi
-                <span className="w-2 h-2 rounded-full bg-amber-500 ml-2" /> $50-74\%$ Sedang
-                <span className="w-2 h-2 rounded-full bg-rose-500 ml-2" /> &lt; $50\%$ Rendah
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>Tinggi</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span>Sedang</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  <span>Rendah</span>
+                </span>
+              </div>
               <Link href="/tutor/tugas" className="text-blue-600 font-semibold hover:text-blue-700">
                 Kelola Tugas &rarr;
               </Link>
