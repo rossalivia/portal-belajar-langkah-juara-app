@@ -338,7 +338,7 @@ export default function DasborTutorPage() {
                     <div className="grid grid-cols-3 gap-3 text-center">
                       <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/60">
                         <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
-                          Predikat A (&ge; 85)
+                          Predikat A
                         </span>
                         <div className="text-xl font-bold text-emerald-900 mt-1">{gradeA}</div>
                         <span className="text-[10px] text-emerald-700 font-semibold">
@@ -348,7 +348,7 @@ export default function DasborTutorPage() {
 
                       <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/60">
                         <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider block">
-                          Predikat B (70-84)
+                          Predikat B
                         </span>
                         <div className="text-xl font-bold text-blue-900 mt-1">{gradeB}</div>
                         <span className="text-[10px] text-blue-700 font-semibold">
@@ -358,7 +358,7 @@ export default function DasborTutorPage() {
 
                       <div className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-200/60">
                         <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider block">
-                          Remedial (&lt; 70)
+                          Remedial
                         </span>
                         <div className="text-xl font-bold text-rose-900 mt-1">{gradeCD}</div>
                         <span className="text-[10px] text-rose-700 font-semibold">
